@@ -334,30 +334,26 @@ body {
   }
 
   &--empty {
-    margin: 0 auto;
+    margin: 50px auto;
     width: 560px;
     text-align: center;
 
     h2 {
       font-size: 32px;
-      margin-bottom: 10px;
+      font-weight: 600;
+      margin-bottom: 15px;
     }
 
     p {
-      font-size: 18px;
+      font-size: 20px;
       line-height: 145.4%;
       letter-spacing: 0.01em;
       color: #777777;
     }
 
-    icon {
-      position: relative;
-      top: 2px;
-    }
-
     img {
       display: block;
-      width: 300px;
+      width: 250px;
       margin: 45px auto 60px;
     }
 
