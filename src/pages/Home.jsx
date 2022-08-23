@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from 'axios';
 import qs from 'qs';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,8 @@ import PizzaBlock from '../components/PizzaBlock';
 import Skeleton from '../components/PizzaBlock/Skeleton';
 import Pagination from '../components/Pagination';
 import { SearchContext } from '../App';
+import { fetchPizzas } from '../redux/slices/pizzaSlice';
+import ErrorContent from '../components/ErrorContent';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -21,10 +22,9 @@ const Home = () => {
   const categoryId = useSelector((state) => state.filter.categoryId);
   const sortType = useSelector((state) => state.filter.sort.sortProperty);
   const currentPage = useSelector((state) => state.filter.currentPage);
+  const { items, status } = useSelector((state) => state.pizza);
 
   const { searchValue } = React.useContext(SearchContext);
-  const [items, setItems] = React.useState([]);
-  const [isLoading, setIsLoading] = React.useState(true);
 
   const onChangeCategory = (id) => {
     dispatch(setCategoryId(id));
@@ -34,22 +34,15 @@ const Home = () => {
     dispatch(setCurrentPage(page));
   };
 
-  const fetchPizzas = () => {
-    setIsLoading(true);
-
+  const getPizzas = async () => {
     const category = categoryId > 0 ? `category=${categoryId}` : '';
     const sortBy = sortType.replace('-', '');
     const order = sortType.includes('-') ? 'asc' : 'desc';
     const search = searchValue ? `&search=${searchValue}` : '';
 
-    axios
-      .get(
-        `https://62fa2ae7ffd7197707e6c8ba.mockapi.io/items?page=${currentPage}&limit=4&${category}&sortBy=${sortBy}&order=${order}${search}`,
-      )
-      .then((res) => {
-        setItems(res.data);
-        setIsLoading(false);
-      });
+    dispatch(fetchPizzas({ category, sortBy, order, search, currentPage }));
+
+    window.scrollTo(0, 0);
   };
 
   // Если был первый рендер и изменились параметры, тогда передаются URL-параметры в адресную строку, если нет - ничего не передается.
@@ -85,11 +78,11 @@ const Home = () => {
   // Если был первый рендер, то заправшиваем пиццы.
   React.useEffect(() => {
     window.scrollTo(0, 0);
-    if (!isSearch.current) {
-      fetchPizzas();
-    }
+    // if (!isSearch.current) {
+    getPizzas();
+    // }
 
-    isSearch.current = false;
+    // isSearch.current = false;
   }, [categoryId, sortType, searchValue, currentPage]);
 
   const skeletons = [...new Array(4)].map((_, index) => <Skeleton key={index} />);
@@ -109,8 +102,14 @@ const Home = () => {
         <Sort />
       </div>
       <h2 className="content__title">Все пиццы</h2>
-      <div className="content__items">{isLoading ? skeletons : pizzas}</div>
-      <Pagination currentPage={currentPage} onChangePage={onChangePage} />
+      {status === 'error' ? (
+        <ErrorContent />
+      ) : (
+        <div className="content__items">
+          {status === 'loading' ? skeletons : pizzas}
+          <Pagination currentPage={currentPage} onChangePage={onChangePage} />
+        </div>
+      )}
     </div>
   );
 };
