@@ -1,16 +1,23 @@
 import React from 'react';
 import qs from 'qs';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { setCategoryId, setCurrentPage, setFilters } from '../redux/slices/filterSlice';
 import Categories from '../components/Categories';
 import Sort, { sortList } from '../components/Sort';
 import PizzaBlock from '../components/PizzaBlock';
 import Skeleton from '../components/PizzaBlock/Skeleton';
 import Pagination from '../components/Pagination';
 import { SearchContext } from '../App';
-import { fetchPizzas } from '../redux/slices/pizzaSlice';
+
+import {
+  selectFilter,
+  setCategoryId,
+  setCurrentPage,
+  setFilters,
+} from '../redux/slices/filterSlice';
+import { fetchPizzas, selectPizzaData } from '../redux/slices/pizzaSlice';
+
 import ErrorContent from '../components/ErrorContent';
 
 const Home = () => {
@@ -19,12 +26,8 @@ const Home = () => {
   const isSearch = React.useRef(false);
   const isMounted = React.useRef(false);
 
-  const categoryId = useSelector((state) => state.filter.categoryId);
-  const sortType = useSelector((state) => state.filter.sort.sortProperty);
-  const currentPage = useSelector((state) => state.filter.currentPage);
-  const { items, status } = useSelector((state) => state.pizza);
-
-  const { searchValue } = React.useContext(SearchContext);
+  const { items, status } = useSelector(selectPizzaData);
+  const { categoryId, sort, currentPage, searchValue } = useSelector(selectFilter);
 
   const onChangeCategory = (id) => {
     dispatch(setCategoryId(id));
@@ -35,12 +38,12 @@ const Home = () => {
   };
 
   const getPizzas = async () => {
+    const sortBy = sort.sortProperty.replace('-', '');
+    const order = sort.sortProperty.includes('-') ? 'asc' : 'desc';
     const category = categoryId > 0 ? `category=${categoryId}` : '';
-    const sortBy = sortType.replace('-', '');
-    const order = sortType.includes('-') ? 'asc' : 'desc';
     const search = searchValue ? `&search=${searchValue}` : '';
 
-    dispatch(fetchPizzas({ category, sortBy, order, search, currentPage }));
+    dispatch(fetchPizzas({ sortBy, order, category, search, currentPage }));
 
     window.scrollTo(0, 0);
   };
@@ -49,7 +52,7 @@ const Home = () => {
   React.useEffect(() => {
     if (isMounted.current) {
       const queryString = qs.stringify({
-        sortProperty: sortType,
+        sortProperty: sort.sortProperty,
         categoryId,
         currentPage,
       });
@@ -57,7 +60,7 @@ const Home = () => {
       navigate(`?${queryString}`);
     }
     isMounted.current = true;
-  }, [categoryId, sortType, searchValue, currentPage]);
+  }, [categoryId, sort.sortProperty, currentPage]);
 
   // Если был первый рендер, то проверяем URL-параметры и сохраняем в редаксе.
   React.useEffect(() => {
@@ -78,12 +81,13 @@ const Home = () => {
   // Если был первый рендер, то заправшиваем пиццы.
   React.useEffect(() => {
     window.scrollTo(0, 0);
-    // if (!isSearch.current) {
-    getPizzas();
-    // }
 
-    // isSearch.current = false;
-  }, [categoryId, sortType, searchValue, currentPage]);
+    if (!isSearch.current) {
+      getPizzas();
+    }
+
+    isSearch.current = false;
+  }, [categoryId, sort.sortProperty, searchValue, currentPage]);
 
   const skeletons = [...new Array(4)].map((_, index) => <Skeleton key={index} />);
   const pizzas = items
@@ -93,7 +97,11 @@ const Home = () => {
       }
       return false;
     })
-    .map((obj) => <PizzaBlock key={obj.id} {...obj} />);
+    .map((obj) => (
+      <Link key={obj.id} to={`/pizza/${obj.id}`}>
+        <PizzaBlock {...obj} />
+      </Link>
+    ));
 
   return (
     <div className="container">
@@ -105,10 +113,10 @@ const Home = () => {
       {status === 'error' ? (
         <ErrorContent />
       ) : (
-        <div className="content__items">
-          {status === 'loading' ? skeletons : pizzas}
+        <>
+          <div className="content__items">{status === 'loading' ? skeletons : pizzas}</div>
           <Pagination currentPage={currentPage} onChangePage={onChangePage} />
-        </div>
+        </>
       )}
     </div>
   );
