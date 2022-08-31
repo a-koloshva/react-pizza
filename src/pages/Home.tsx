@@ -8,7 +8,6 @@ import Sort, { sortList } from '../components/Sort';
 import PizzaBlock from '../components/PizzaBlock';
 import Skeleton from '../components/PizzaBlock/Skeleton';
 import Pagination from '../components/Pagination';
-import { SearchContext } from '../App';
 
 import {
   selectFilter,
@@ -20,7 +19,7 @@ import { fetchPizzas, selectPizzaData } from '../redux/slices/pizzaSlice';
 
 import ErrorContent from '../components/ErrorContent';
 
-const Home = () => {
+const Home: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isSearch = React.useRef(false);
@@ -29,11 +28,11 @@ const Home = () => {
   const { items, status } = useSelector(selectPizzaData);
   const { categoryId, sort, currentPage, searchValue } = useSelector(selectFilter);
 
-  const onChangeCategory = (id) => {
-    dispatch(setCategoryId(id));
+  const onChangeCategory = (idx: number) => {
+    dispatch(setCategoryId(idx));
   };
 
-  const onChangePage = (page) => {
+  const onChangePage = (page: number) => {
     dispatch(setCurrentPage(page));
   };
 
@@ -43,7 +42,10 @@ const Home = () => {
     const category = categoryId > 0 ? `category=${categoryId}` : '';
     const search = searchValue ? `&search=${searchValue}` : '';
 
-    dispatch(fetchPizzas({ sortBy, order, category, search, currentPage }));
+    dispatch(
+      //@ts-ignore
+      fetchPizzas({ sortBy, order, category, search, currentPage }),
+    );
 
     window.scrollTo(0, 0);
   };
@@ -91,13 +93,13 @@ const Home = () => {
 
   const skeletons = [...new Array(4)].map((_, index) => <Skeleton key={index} />);
   const pizzas = items
-    .filter((obj) => {
+    .filter((obj: any) => {
       if (obj.title.toLowerCase().includes(searchValue.toLowerCase())) {
         return true;
       }
       return false;
     })
-    .map((obj) => (
+    .map((obj: any) => (
       <Link key={obj.id} to={`/pizza/${obj.id}`}>
         <PizzaBlock {...obj} />
       </Link>
