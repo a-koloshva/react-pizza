@@ -37,6 +37,7 @@ const FullPizza: React.FC = () => {
         ipsam architecto a odio, vitae quas accusantium nihil nobis.
       </p>
       <h4>{pizza.price} рублей</h4>
+      <button>Назад</button>
     </div>
   );
 };
